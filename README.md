@@ -19,7 +19,7 @@ A modern weather application built with Go, featuring a clean frontend interface
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/devops-weaterapp.git
+git clone https://github.com/Alikhan31/devops-weaterapp.git
 cd devops-weaterapp
 ```
 
