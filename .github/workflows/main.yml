@@ -31,6 +31,11 @@ jobs:
         go test -v ./...
 
     - name: Build Docker images
+      env:
+        OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
       run: |
-        docker-compose build
+        cd backend
+        docker build -t weather-app-backend .
+        cd ../frontend
+        docker build -t weather-app-frontend .
         # Add your Docker registry push commands here if needed 
