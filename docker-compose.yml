@@ -10,9 +10,16 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - OPENWEATHER_API_KEY=f4be635644e6eaf06893be7c736766cd
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   redis:
     image: redis:alpine
@@ -20,6 +27,12 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   frontend:
     build:
@@ -28,7 +41,8 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   redis_data: 
