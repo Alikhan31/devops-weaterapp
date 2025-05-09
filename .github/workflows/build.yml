@@ -21,13 +21,8 @@ jobs:
       with:
         go-version: '1.20'
 
-    - name: Install Docker Compose
-      run: |
-        sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.6/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-        sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-        export PATH=$PATH:/usr/local/bin
-        docker-compose --version
+    - name: Set up Docker Compose
+      uses: ndeloof/install-compose-action@v1
 
     - name: Run Tests
       run: |
@@ -38,17 +33,15 @@ jobs:
       env:
         OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
       run: |
-        export PATH=$PATH:/usr/local/bin
-        docker-compose config
-        docker-compose build --no-cache
+        docker compose config
+        docker compose build --no-cache
 
     - name: Test Docker Compose
       env:
         OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
       run: |
-        export PATH=$PATH:/usr/local/bin
-        docker-compose up -d
+        docker compose up -d
         sleep 20
         curl -f http://localhost:8080/health || exit 1
         curl -f http://localhost:8080/weather?lat=51.5074&lon=-0.1278 || exit 1
-        docker-compose down 
+        docker compose down 
