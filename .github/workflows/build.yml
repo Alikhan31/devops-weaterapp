@@ -21,27 +21,34 @@ jobs:
       with:
         go-version: '1.20'
 
-    - name: Set up Docker Compose
-      uses: docker/setup-compose-action@v1
-
     - name: Run Tests
       run: |
         cd backend
         go test ./...
 
-    - name: Build with Docker Compose
+    - name: Build Backend
       env:
         OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
       run: |
-        docker compose config
-        docker compose build --no-cache
+        cd backend
+        docker build -t weather-app-backend .
 
-    - name: Test Docker Compose
+    - name: Build Frontend
+      run: |
+        cd frontend
+        docker build -t weather-app-frontend .
+
+    - name: Test Application
       env:
         OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
       run: |
-        docker compose up -d
+        docker network create weather-app-network
+        docker run -d --name redis --network weather-app-network redis:alpine
+        docker run -d --name backend --network weather-app-network -p 8080:8080 -e REDIS_HOST=redis -e REDIS_PORT=6379 -e OPENWEATHER_API_KEY=$OPENWEATHER_API_KEY weather-app-backend
+        docker run -d --name frontend --network weather-app-network -p 80:80 weather-app-frontend
         sleep 20
         curl -f http://localhost:8080/health || exit 1
         curl -f http://localhost:8080/weather?lat=51.5074&lon=-0.1278 || exit 1
-        docker compose down 
+        docker stop frontend backend redis
+        docker rm frontend backend redis
+        docker network rm weather-app-network 
