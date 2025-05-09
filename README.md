@@ -1,42 +1,63 @@
 # Weather Application
 
-A simple weather application that demonstrates the use of Go backend, Redis caching, and a modern frontend.
+A modern weather application built with Go, featuring a clean frontend interface, Redis caching, and Docker containerization.
 
-## Architecture
+## Features
 
-- Backend: Go REST API with Gin framework
-- Frontend: HTML + JavaScript with Tailwind CSS
-- Cache: Redis for weather data caching
-- Containerization: Docker and docker-compose
-- CI/CD: GitHub Actions
+- Real-time weather data from OpenWeatherMap API
+- Redis caching for improved performance
+- Docker containerization for easy deployment
+- CI/CD pipeline with GitHub Actions
+- Responsive frontend design
 
 ## Prerequisites
 
-- Docker and docker-compose
-- Go 1.20 or later (for local development)
-- Redis (handled by docker-compose)
+- Docker and Docker Compose
+- OpenWeatherMap API key
 
-## Setup and Running
+## Getting Started
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd weather-app
+git clone https://github.com/yourusername/devops-weaterapp.git
+cd devops-weaterapp
 ```
 
-2. Start the application using docker-compose:
+2. Create a `.env` file in the root directory with your OpenWeatherMap API key:
+```
+OPENWEATHER_API_KEY=your_api_key_here
+```
+
+3. Start the application:
 ```bash
-docker-compose up --build
+docker-compose up -d
 ```
 
-The application will be available at:
-- Frontend: http://localhost
-- Backend API: http://localhost:8080
+4. Access the application:
+- Frontend: http://localhost:80
+- Backend API: http://localhost:8080/weather
+
+## Project Structure
+
+```
+.
+├── backend/           # Go backend service
+│   ├── main.go       # Main application code
+│   └── Dockerfile    # Backend container configuration
+├── frontend/         # Frontend service
+│   ├── index.html    # Main HTML file
+│   ├── styles.css    # CSS styles
+│   ├── script.js     # Frontend JavaScript
+│   └── Dockerfile    # Frontend container configuration
+├── docker-compose.yml # Docker services configuration
+└── .github/          # GitHub Actions workflows
+    └── workflows/    # CI/CD pipeline configuration
+```
 
 ## API Endpoints
 
 ### GET /weather
-Get weather information for given coordinates.
+Returns weather information for a specific location.
 
 Query Parameters:
 - `lat`: Latitude
@@ -44,39 +65,47 @@ Query Parameters:
 
 Example:
 ```
-GET http://localhost:8080/weather?lat=40.7128&lon=-74.0060
+GET http://localhost:8080/weather?lat=51.5074&lon=-0.1278
 ```
 
 Response:
 ```json
 {
-    "temperature": 20.5,
-    "description": "Sunny",
-    "city": "Example City"
+    "temperature": 17.08,
+    "description": "clear sky",
+    "city": "London",
+    "humidity": 38,
+    "windSpeed": 6.69
 }
 ```
 
 ## Development
 
-### Backend
-The backend is written in Go using the Gin framework. It includes:
-- REST API endpoints
-- Redis caching for weather data
-- CORS support
-- Environment variable configuration
+### Running Tests
+```bash
+cd backend
+go test ./...
+```
 
-### Frontend
-The frontend is a simple HTML/JavaScript application with:
-- Modern UI using Tailwind CSS
-- Responsive design
-- Error handling
-- Real-time weather updates
+### Building Locally
+```bash
+# Backend
+cd backend
+go build
 
-## CI/CD
-The project includes GitHub Actions workflow that:
-- Runs tests on pull requests and pushes to main
-- Builds Docker images
-- (Optional) Pushes to Docker registry
+# Frontend
+cd frontend
+# Serve with any static file server
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
-MIT 
+
+This project is licensed under the MIT License - see the LICENSE file for details. 

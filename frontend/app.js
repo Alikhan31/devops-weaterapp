@@ -11,11 +11,12 @@ async function getWeather() {
 
     try {
         const response = await fetch(`http://localhost:8080/weather?lat=${latitude}&lon=${longitude}`);
+        const data = await response.json();
+        
         if (!response.ok) {
-            throw new Error('Failed to fetch weather data');
+            throw new Error(data.error || 'Failed to fetch weather data');
         }
 
-        const data = await response.json();
         displayWeather(data);
         errorDiv.classList.add('hidden');
     } catch (error) {
@@ -29,10 +30,14 @@ function displayWeather(data) {
     const city = document.getElementById('city');
     const temperature = document.getElementById('temperature');
     const description = document.getElementById('description');
+    const humidity = document.getElementById('humidity');
+    const windSpeed = document.getElementById('windSpeed');
 
     city.textContent = data.city;
     temperature.textContent = `${data.temperature}°C`;
     description.textContent = data.description;
+    humidity.textContent = `${data.humidity}%`;
+    windSpeed.textContent = `${data.windSpeed} m/s`;
 
     weatherResult.classList.remove('hidden');
 }

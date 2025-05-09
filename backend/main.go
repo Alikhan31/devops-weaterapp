@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -17,6 +18,22 @@ type WeatherResponse struct {
 	Temperature float64 `json:"temperature"`
 	Description string  `json:"description"`
 	City        string  `json:"city"`
+	Humidity    int     `json:"humidity"`
+	WindSpeed   float64 `json:"windSpeed"`
+}
+
+type OpenWeatherResponse struct {
+	Main struct {
+		Temp     float64 `json:"temp"`
+		Humidity int     `json:"humidity"`
+	} `json:"main"`
+	Weather []struct {
+		Description string `json:"description"`
+	} `json:"weather"`
+	Wind struct {
+		Speed float64 `json:"speed"`
+	} `json:"wind"`
+	Name string `json:"name"`
 }
 
 var redisClient *redis.Client
@@ -24,7 +41,17 @@ var redisClient *redis.Client
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("No .env file found")
+		log.Printf("Error loading .env file: %v", err)
+	} else {
+		log.Println(".env file loaded successfully")
+	}
+
+	// Debug: Print all environment variables
+	apiKey := getEnv("OPENWEATHER_API_KEY", "")
+	if apiKey == "" {
+		log.Println("WARNING: OPENWEATHER_API_KEY is not set")
+	} else {
+		log.Printf("OPENWEATHER_API_KEY is set (first 4 chars: %s...)", apiKey[:4])
 	}
 
 	redisClient = redis.NewClient(&redis.Options{
@@ -43,12 +70,50 @@ func getEnv(key, defaultValue string) string {
 }
 
 func getWeatherFromAPI(lat, lon string) (*WeatherResponse, error) {
-	// In a real application, you would call a weather API here
-	// For this example, we'll return mock data
+	apiKey := getEnv("OPENWEATHER_API_KEY", "")
+	if apiKey == "" {
+		return nil, fmt.Errorf("OpenWeather API key not found in environment variables")
+	}
+
+	// Print API key for debugging (first 4 characters)
+	log.Printf("Using API key: %s...", apiKey[:4])
+
+	url := fmt.Sprintf("https://api.openweathermap.org/data/2.5/weather?lat=%s&lon=%s&appid=%s&units=metric", lat, lon, apiKey)
+	log.Printf("Requesting URL: %s", url)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		log.Printf("HTTP request error: %v", err)
+		return nil, fmt.Errorf("failed to fetch weather data: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Error reading response body: %v", err)
+		return nil, fmt.Errorf("failed to read API response: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("API Error Response: %s", string(body))
+		return nil, fmt.Errorf("weather API returned status %d: %s", resp.StatusCode, string(body))
+	}
+
+	log.Printf("API Response: %s", string(body))
+
+	var weatherData OpenWeatherResponse
+	if err := json.Unmarshal(body, &weatherData); err != nil {
+		log.Printf("Error decoding JSON: %v", err)
+		return nil, fmt.Errorf("failed to decode weather data: %v", err)
+	}
+
 	return &WeatherResponse{
-		Temperature: 20.5,
-		Description: "Sunny",
-		City:        "Example City",
+		Temperature: weatherData.Main.Temp,
+		Description: weatherData.Weather[0].Description,
+		City:        weatherData.Name,
+		Humidity:    weatherData.Main.Humidity,
+		WindSpeed:   weatherData.Wind.Speed,
 	}, nil
 }
 
@@ -75,7 +140,8 @@ func getWeather(c *gin.Context) {
 	// If not in cache, get from API
 	weather, err := getWeatherFromAPI(lat, lon)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get weather data"})
+		log.Printf("Error getting weather: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

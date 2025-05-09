@@ -10,6 +10,7 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - OPENWEATHER_API_KEY=f4be635644e6eaf06893be7c736766cd
     depends_on:
       - redis
 
