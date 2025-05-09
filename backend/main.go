@@ -152,6 +152,24 @@ func getWeather(c *gin.Context) {
 	c.JSON(http.StatusOK, weather)
 }
 
+func healthCheck(c *gin.Context) {
+	// Check Redis connection
+	ctx := c.Request.Context()
+	_, err := redisClient.Ping(ctx).Result()
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{
+			"status": "error",
+			"error":  "Redis connection failed",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "healthy",
+		"time":   time.Now().Format(time.RFC3339),
+	})
+}
+
 func main() {
 	r := gin.Default()
 
@@ -167,6 +185,7 @@ func main() {
 		c.Next()
 	})
 
+	r.GET("/health", healthCheck)
 	r.GET("/weather", getWeather)
 
 	log.Fatal(r.Run(":8080"))

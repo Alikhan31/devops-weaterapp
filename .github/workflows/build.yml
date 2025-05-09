@@ -44,11 +44,28 @@ jobs:
       run: |
         docker network create weather-app-network
         docker run -d --name redis --network weather-app-network redis:alpine
+        sleep 5
         docker run -d --name backend --network weather-app-network -p 8080:8080 -e REDIS_HOST=redis -e REDIS_PORT=6379 -e OPENWEATHER_API_KEY=$OPENWEATHER_API_KEY weather-app-backend
         docker run -d --name frontend --network weather-app-network -p 80:80 weather-app-frontend
-        sleep 20
-        curl -f http://localhost:8080/health || exit 1
+        
+        # Wait for health endpoint to be ready
+        for i in {1..30}; do
+          if curl -s -f http://localhost:8080/health > /dev/null; then
+            echo "Health endpoint is ready"
+            break
+          fi
+          if [ $i -eq 30 ]; then
+            echo "Health endpoint failed to become ready"
+            exit 1
+          fi
+          echo "Waiting for health endpoint... ($i/30)"
+          sleep 2
+        done
+        
+        # Test weather endpoint
         curl -f http://localhost:8080/weather?lat=51.5074&lon=-0.1278 || exit 1
+        
+        # Cleanup
         docker stop frontend backend redis
         docker rm frontend backend redis
         docker network rm weather-app-network 
