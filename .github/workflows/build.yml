@@ -21,13 +21,11 @@ jobs:
       with:
         go-version: '1.20'
 
-    - name: Install Docker Compose
+    - name: Install Docker Compose Plugin
       run: |
-        DOCKER_COMPOSE_VERSION=v2.24.6
-        sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-        sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
-        docker-compose --version
+        sudo apt-get update
+        sudo apt-get install -y docker-compose-plugin
+        docker compose version
 
     - name: Run Tests
       run: |
@@ -38,15 +36,15 @@ jobs:
       env:
         OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
       run: |
-        docker-compose config
-        docker-compose build --no-cache
+        docker compose config
+        docker compose build --no-cache
 
     - name: Test Docker Compose
       env:
         OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
       run: |
-        docker-compose up -d
+        docker compose up -d
         sleep 20
         curl -f http://localhost:8080/health || exit 1
         curl -f http://localhost:8080/weather?lat=51.5074&lon=-0.1278 || exit 1
-        docker-compose down 
+        docker compose down 
